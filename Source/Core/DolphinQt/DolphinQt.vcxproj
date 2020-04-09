@@ -150,6 +150,7 @@
     <QtMoc Include="Debugger\MemoryViewWidget.h" />
     <QtMoc Include="Debugger\NetworkWidget.h" />
     <QtMoc Include="Debugger\NewBreakpointDialog.h" />
+    <QtMoc Include="Debugger\CodeDiffDialog.h" />
     <QtMoc Include="Debugger\PatchInstructionDialog.h" />
     <QtMoc Include="Debugger\RegisterWidget.h" />
     <QtMoc Include="Debugger\ThreadWidget.h" />
@@ -210,6 +211,7 @@
     <ClCompile Include="$(QtMocOutPrefix)CheatWarningWidget.cpp" />
     <ClCompile Include="$(QtMocOutPrefix)CheatsManager.cpp" />
     <ClCompile Include="$(QtMocOutPrefix)ChunkedProgressDialog.cpp" />
+    <ClCompile Include="$(QtMocOutPrefix)CodeDiffDialog.cpp" />
     <ClCompile Include="$(QtMocOutPrefix)CodeViewWidget.cpp" />
     <ClCompile Include="$(QtMocOutPrefix)CodeWidget.cpp" />
     <ClCompile Include="$(QtMocOutPrefix)DualShockUDPClientWidget.cpp" />
@@ -380,6 +382,7 @@
     <ClCompile Include="Config\PropertiesDialog.cpp" />
     <ClCompile Include="Config\SettingsWindow.cpp" />
     <ClCompile Include="Config\VerifyWidget.cpp" />
+    <ClCompile Include="Debugger\CodeDiffDialog.cpp" />
     <ClCompile Include="ConvertDialog.cpp" />
     <ClCompile Include="Debugger\CodeViewWidget.cpp" />
     <ClCompile Include="Debugger\CodeWidget.cpp" />
