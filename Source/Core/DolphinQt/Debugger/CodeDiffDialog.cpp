@@ -1,6 +1,5 @@
 // Copyright 2021 Dolphin Emulator Project
-// Licensed under GPLv2+
-// Refer to the license.txt file included.
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "DolphinQt/Debugger/CodeDiffDialog.h"
 
@@ -141,7 +140,7 @@ void CodeDiffDialog::OnRecord(bool enabled)
   if (enabled)
   {
     ClearBlockCache();
-    m_record_btn->setText(tr("Recording..."));
+    m_record_btn->setText(tr("Stop Recording"));
     state = JitInterface::ProfilingState::Enabled;
     m_exclude_btn->setEnabled(true);
     m_include_btn->setEnabled(true);
@@ -338,7 +337,7 @@ void CodeDiffDialog::InfoDisp()
           "Used to find functions based on when they should be running. Similar to Cheat Engine "
           "Ultimap.\n"
           "A symbol map must be loaded prior to use.\n\n'Start Recording': will "
-          "keep track of what functions run. Clicking 'Recording...' again will erase current "
+          "keep track of what functions run. Clicking 'Stop Recording' again will erase current "
           "recording without any change to the lists.\n'Code did not get executed': click while "
           "recording, will add recorded functions to an exclude "
           "list, then reset the recording list.\n'Code has been executed': click while recording, "
