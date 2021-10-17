@@ -83,18 +83,24 @@ static bool QtMsgAlertHandler(const char* caption, const char* text, bool yes_no
 
     const int button = message_box.exec();
     if (button == QMessageBox::Yes)
+    {
+      //Core::SetState(Core::State::Paused);
       return true;
-
+    }
     if (button == QMessageBox::Ignore)
     {
+      //Core::SetState(Core::State::Paused); causing dolphin to hang- because handle thread? find alternative pause
       Common::SetEnableAlert(false);
       return true;
     }
-
     return false;
   });
   if (r.has_value())
+  {
+    Core::SetState(Core::State::Paused);
     return *r;
+  }
+  //Core::SetState(Core::State::Paused);
   return false;
 }
 
