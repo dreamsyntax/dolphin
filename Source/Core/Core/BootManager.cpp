@@ -164,6 +164,7 @@ void ConfigCache::RestoreConfig(SConfig* config)
   config->bAccurateNaNs = bAccurateNaNs;
   config->bDisableICache = bDisableICache;
   config->bMMU = bMMU;
+  //config->bAccuratePanicHandles = bAccuratePanicHandles;
   config->bLowDCBZHack = bLowDCBZHack;
   config->m_DSPEnableJIT = m_EnableJIT;
   config->bSyncGPU = bSyncGPU;

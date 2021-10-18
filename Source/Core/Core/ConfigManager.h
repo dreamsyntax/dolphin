@@ -131,6 +131,7 @@ struct SConfig
   bool bRunCompareClient = false;
 
   bool bMMU = false;
+  bool bPauseOnPanicHandles = true;
   bool bLowDCBZHack = false;
   int iBBDumpPort = 0;
   bool bFastDiscSpeed = false;

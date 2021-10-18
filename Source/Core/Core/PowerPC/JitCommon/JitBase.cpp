@@ -45,7 +45,7 @@ void JitBase::UpdateMemoryAndExceptionOptions()
 {
   bool any_watchpoints = PowerPC::memchecks.HasAny();
   jo.fastmem = SConfig::GetInstance().bFastmem && jo.fastmem_arena && (MSR.DR || !any_watchpoints);
-  jo.memcheck = SConfig::GetInstance().bMMU || any_watchpoints;
+  jo.memcheck = SConfig::GetInstance().bMMU || SConfig::GetInstance().bPauseOnPanicHandles || any_watchpoints;
   jo.fp_exceptions = SConfig::GetInstance().bFloatExceptions;
   jo.div_by_zero_exceptions = SConfig::GetInstance().bDivideByZeroExceptions;
 }
