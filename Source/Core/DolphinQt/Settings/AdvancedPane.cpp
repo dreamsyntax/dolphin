@@ -68,6 +68,12 @@ void AdvancedPane::CreateLayout()
       "Enables the Memory Management Unit, needed for some games. (ON = Compatible, OFF = Fast)"));
   cpu_options_group_layout->addWidget(m_enable_mmu_checkbox);
 
+  m_pause_on_panic_handler_checkbox = new QCheckBox(tr("Pause on Panic Handler"));
+  m_pause_on_panic_handler_checkbox->setToolTip(
+      tr("Pauses the emulation if a Read/Write or Unknown Instruction panic occurs.\nEnabling will "
+         "affect performance.\nThe performance impact is the same as having Enable MMU on."));
+  cpu_options_group_layout->addWidget(m_pause_on_panic_handler_checkbox);
+
   auto* clock_override = new QGroupBox(tr("Clock Override"));
   auto* clock_override_layout = new QVBoxLayout();
   clock_override->setLayout(clock_override_layout);
@@ -181,6 +187,9 @@ void AdvancedPane::ConnectLayout()
   connect(m_enable_mmu_checkbox, &QCheckBox::toggled, this,
           [](bool checked) { SConfig::GetInstance().bMMU = checked; });
 
+  connect(m_pause_on_panic_handler_checkbox, &QCheckBox::toggled, this,
+          [](bool checked) { SConfig::GetInstance().bPauseOnPanicHandler = checked; });
+
   m_cpu_clock_override_checkbox->setChecked(SConfig::GetInstance().m_OCEnable);
   connect(m_cpu_clock_override_checkbox, &QCheckBox::toggled, [this](bool enable_clock_override) {
     SConfig::GetInstance().m_OCEnable = enable_clock_override;
@@ -246,6 +255,9 @@ void AdvancedPane::Update()
 
   m_enable_mmu_checkbox->setChecked(SConfig::GetInstance().bMMU);
   m_enable_mmu_checkbox->setEnabled(!running);
+
+  m_pause_on_panic_handler_checkbox->setChecked(SConfig::GetInstance().bPauseOnPanicHandler);
+  m_pause_on_panic_handler_checkbox->setEnabled(!running);
 
   QFont bf = font();
   bf.setBold(Config::GetActiveLayerForConfig(Config::MAIN_OVERCLOCK_ENABLE) !=

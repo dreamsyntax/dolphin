@@ -80,6 +80,7 @@ private:
   bool bFPRF = false;
   bool bAccurateNaNs = false;
   bool bMMU = false;
+  bool bPauseOnPanicHandler = false;
   bool bLowDCBZHack = false;
   bool bDisableICache = false;
   bool bSyncGPU = false;
@@ -113,6 +114,7 @@ void ConfigCache::SaveConfig(const SConfig& config)
   bAccurateNaNs = config.bAccurateNaNs;
   bDisableICache = config.bDisableICache;
   bMMU = config.bMMU;
+  bPauseOnPanicHandler = config.bPauseOnPanicHandler;
   bSyncGPU = config.bSyncGPU;
   iSyncGpuMaxDistance = config.iSyncGpuMaxDistance;
   iSyncGpuMinDistance = config.iSyncGpuMinDistance;
@@ -156,6 +158,7 @@ void ConfigCache::RestoreConfig(SConfig* config)
   config->bAccurateNaNs = bAccurateNaNs;
   config->bDisableICache = bDisableICache;
   config->bMMU = bMMU;
+  config->bPauseOnPanicHandler = bPauseOnPanicHandler;
   config->bLowDCBZHack = bLowDCBZHack;
   config->bSyncGPU = bSyncGPU;
   config->iSyncGpuMaxDistance = iSyncGpuMaxDistance;

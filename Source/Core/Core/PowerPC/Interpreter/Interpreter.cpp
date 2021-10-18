@@ -353,6 +353,8 @@ void Interpreter::unknown_instruction(UGeckoInstruction inst)
   ASSERT_MSG(POWERPC, 0,
              "\nIntCPU: Unknown instruction %08x at PC = %08x  last_PC = %08x  LR = %08x\n",
              inst.hex, PC, last_pc, LR);
+  if (SConfig::GetInstance().bPauseOnPanicHandler)
+    CPU::Break();
 }
 
 void Interpreter::ClearCache()

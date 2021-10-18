@@ -239,6 +239,7 @@ void SConfig::SaveCoreSettings(IniFile& ini)
   core->Set("RunCompareServer", bRunCompareServer);
   core->Set("RunCompareClient", bRunCompareClient);
   core->Set("MMU", bMMU);
+  core->Set("PauseOnPanicHandler", bPauseOnPanicHandler);
   core->Set("EmulationSpeed", m_EmulationSpeed);
   core->Set("Overclock", m_OCFactor);
   core->Set("OverclockEnable", m_OCEnable);
@@ -475,6 +476,7 @@ void SConfig::LoadCoreSettings(IniFile& ini)
   core->Get("RunCompareServer", &bRunCompareServer, false);
   core->Get("RunCompareClient", &bRunCompareClient, false);
   core->Get("MMU", &bMMU, bMMU);
+  core->Get("PauseOnPanicHandler", &bPauseOnPanicHandler, bPauseOnPanicHandler);
   core->Get("BBDumpPort", &iBBDumpPort, -1);
   core->Get("SyncGPU", &bSyncGPU, false);
   core->Get("SyncGpuMaxDistance", &iSyncGpuMaxDistance, 200000);
