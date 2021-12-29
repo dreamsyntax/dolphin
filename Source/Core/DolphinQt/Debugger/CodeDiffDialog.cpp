@@ -70,9 +70,18 @@ void CodeDiffDialog::CreateWidgets()
   btns_layout->addWidget(m_exclude_size_label, 1, 0);
   btns_layout->addWidget(m_include_size_label, 1, 1);
 
-  m_matching_results_list = new QListWidget();
-  m_matching_results_list->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-  m_matching_results_list->setContextMenuPolicy(Qt::CustomContextMenu);
+  m_matching_results_table = new QTableWidget();
+  m_matching_results_table->setColumnCount(4);
+  m_matching_results_table->setHorizontalHeaderLabels(
+      {tr("Address"), tr("Hits"), tr("Symbol"), tr("Inspected")});
+  m_matching_results_table->setSelectionMode(QAbstractItemView::SingleSelection);
+  m_matching_results_table->setSelectionBehavior(QAbstractItemView::SelectRows);
+  m_matching_results_table->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  m_matching_results_table->setContextMenuPolicy(Qt::CustomContextMenu);
+  m_matching_results_table->setColumnWidth(0, 60);
+  m_matching_results_table->setColumnWidth(1, 4);
+  m_matching_results_table->setColumnWidth(2, 210);
+  m_matching_results_table->setColumnWidth(3, 65);
   m_reset_btn = new QPushButton(tr("Reset All"));
   m_reset_btn->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   m_help_btn = new QPushButton(tr("Help"));
@@ -84,7 +93,7 @@ void CodeDiffDialog::CreateWidgets()
   auto* layout = new QVBoxLayout();
   layout->addLayout(btns_layout);
   layout->addLayout(labels_layout);
-  layout->addWidget(m_matching_results_list);
+  layout->addWidget(m_matching_results_table);
   layout->addLayout(help_reset_layout);
 
   setLayout(layout);
@@ -95,17 +104,17 @@ void CodeDiffDialog::ConnectWidgets()
   connect(m_record_btn, &QPushButton::toggled, this, &CodeDiffDialog::OnRecord);
   connect(m_include_btn, &QPushButton::pressed, [this]() { Update(true); });
   connect(m_exclude_btn, &QPushButton::pressed, [this]() { Update(false); });
-  connect(m_matching_results_list, &QListWidget::itemClicked, [this]() { OnClickItem(); });
+  connect(m_matching_results_table, &QTableWidget::itemClicked, [this]() { OnClickItem(); });
   connect(m_reset_btn, &QPushButton::pressed, this, &CodeDiffDialog::ClearData);
   connect(m_help_btn, &QPushButton::pressed, this, &CodeDiffDialog::InfoDisp);
-  connect(m_matching_results_list, &CodeDiffDialog::customContextMenuRequested, this,
+  connect(m_matching_results_table, &CodeDiffDialog::customContextMenuRequested, this,
           &CodeDiffDialog::OnContextMenu);
 }
 
 void CodeDiffDialog::OnClickItem()
 {
   UpdateItem();
-  auto address = m_matching_results_list->currentItem()->data(Qt::UserRole).toUInt();
+  auto address = m_matching_results_table->currentItem()->data(Qt::UserRole).toUInt();
   m_code_widget->SetAddress(address, CodeViewWidget::SetAddressUpdate::WithDetailedUpdate);
 }
 
@@ -114,7 +123,10 @@ void CodeDiffDialog::ClearData()
   if (m_record_btn->isChecked())
     m_record_btn->toggle();
   ClearBlockCache();
-  m_matching_results_list->clear();
+  m_matching_results_table->clear();
+  m_matching_results_table->setRowCount(0);
+  m_matching_results_table->setHorizontalHeaderLabels(
+      {tr("Address"), tr("Hits"), tr("Symbol"), tr("Inspected")});
   m_exclude_size_label->setText(QStringLiteral("Excluded: 0"));
   m_include_size_label->setText(QStringLiteral("Included: 0"));
   m_exclude_btn->setEnabled(false);
@@ -335,22 +347,34 @@ void CodeDiffDialog::Update(bool include)
     OnExclude();
   }
 
-  m_matching_results_list->clear();
+  const auto create_item = [](const QString string = {}, const u32 address = 0x00000000) {
+    QTableWidgetItem* item = new QTableWidgetItem(string);
+    item->setData(Qt::UserRole, address);
+    item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+    return item;
+  };
 
-  new QListWidgetItem(tr("Address\tHits\tSymbol"), m_matching_results_list);
+  int i = 0;
+  m_matching_results_table->clear();
+  m_matching_results_table->setRowCount(i);
+  m_matching_results_table->setHorizontalHeaderLabels(
+      {tr("Address"), tr("Hits"), tr("Symbol"), tr("Inspected")});
 
   for (auto& iter : m_include)
   {
+    m_matching_results_table->setRowCount(i + 1);
+
     QString fix_sym = QString::fromStdString(iter.symbol);
     fix_sym.replace(QStringLiteral("\t"), QStringLiteral("  "));
 
-    QString tmp_out =
-        QStringLiteral("%1\t%2\t%3").arg(iter.addr, 1, 16).arg(iter.hits).arg(fix_sym);
-
-    auto* item = new QListWidgetItem(tmp_out, m_matching_results_list);
-    item->setData(Qt::UserRole, iter.addr);
-
-    m_matching_results_list->addItem(item);
+    m_matching_results_table->setItem(
+        i, 0, create_item(QStringLiteral("%1").arg(iter.addr, 1, 16), iter.addr));
+    m_matching_results_table->setItem(i, 1,
+                                      create_item(QStringLiteral("%1").arg(iter.hits), iter.addr));
+    m_matching_results_table->setItem(i, 2,
+                                      create_item(QStringLiteral("%1").arg(fix_sym), iter.addr));
+    m_matching_results_table->setItem(i, 3, create_item(QStringLiteral(""), iter.addr));
+    i++;
   }
 
   m_exclude_size_label->setText(QStringLiteral("Excluded: %1").arg(m_exclude.size()));
@@ -368,8 +392,11 @@ void CodeDiffDialog::InfoDisp()
       QStringLiteral(
           "Used to find functions based on when they should be running.\nSimilar to Cheat Engine "
           "Ultimap.\n"
-          "A symbol map must be loaded prior to use.\n\n'Start Recording': will "
-          "keep track of what functions run. Clicking 'Stop Recording' again will erase current "
+          "A symbol map must be loaded prior to use.\n"
+          "Include/Exclude lists will persist on ending/restarting emulation.\nThese lists "
+          "will not persist on Dolphin close."
+          "\n\n'Start Recording': "
+          "keeps track of what functions run.\n'Stop Recording': erases current "
           "recording without any change to the lists.\n'Code did not get executed': click while "
           "recording, will add recorded functions to an exclude "
           "list, then reset the recording list.\n'Code has been executed': click while recording, "
@@ -380,23 +407,27 @@ void CodeDiffDialog::InfoDisp()
           "and "
           "any includes left over will be displayed.\nYou can continue to use "
           "'Code did not get executed'/'Code has been executed' to narrow down the "
-          "results.\n\nExample: "
+          "results."));
+  ModalMessageBox::information(
+      this, tr("Code Diff Tool Help"),
+      QStringLiteral(
+          "Example:\n"
           "You want to find a function that runs when HP is modified.\n1. Start recording and "
           "play the game without letting HP be modified, then press 'Code did not get "
           "executed'.\n2. "
           "Immediately gain/lose HP and press 'Code has been executed'.\n3. Repeat 1 or 2 to "
           "narrow down the "
-          "results.\nIncludes should "
+          "results.\nIncludes (Code has been executed) should "
           "have short recordings focusing on what you want.\n\nPressing 'Code has been "
           "executed' twice will only "
           "keep functions that ran for both recordings.\n\nRight click -> 'Set blr' will place a "
-          "blr at the top of the symbol.\n"
-          "Recording lists will persist on ending emulation / restarting emulation. Recordings "
-          "will not persist on Dolphin close."));
+          "blr at the top of the symbol.\n"));
 }
 
 void CodeDiffDialog::OnContextMenu()
 {
+  if (m_matching_results_table->currentItem() == nullptr)
+    return;
   UpdateItem();
   QMenu* menu = new QMenu(this);
   menu->addAction(tr("&Go to start of function"), this, &CodeDiffDialog::OnGoTop);
@@ -407,7 +438,7 @@ void CodeDiffDialog::OnContextMenu()
 
 void CodeDiffDialog::OnGoTop()
 {
-  auto item = m_matching_results_list->currentItem();
+  auto item = m_matching_results_table->currentItem();
   if (!item)
     return;
   Common::Symbol* symbol = g_symbolDB.GetSymbolFromAddr(item->data(Qt::UserRole).toUInt());
@@ -418,52 +449,51 @@ void CodeDiffDialog::OnGoTop()
 
 void CodeDiffDialog::OnDelete()
 {
-  // Delete from include and listwidget.
-  int remove_item = m_matching_results_list->row(m_matching_results_list->currentItem());
-  if (!remove_item || remove_item == -1)
+  // Delete from include list and qtable widget
+  auto item = m_matching_results_table->currentItem();
+  if (!item)
     return;
-  m_include.erase(m_include.begin() + remove_item - 1);
-  m_matching_results_list->takeItem(remove_item);
+  int row = m_matching_results_table->row(item);
+  if (row == -1)
+    return;
+  // TODO: If/when sorting is ever added, .erase needs to find item position instead; leaving as is
+  // for performance
+  m_include.erase(m_include.begin() + row);
+  m_matching_results_table->removeRow(row);
 }
 
 void CodeDiffDialog::OnSetBLR()
 {
-  auto item = m_matching_results_list->currentItem();
+  auto item = m_matching_results_table->currentItem();
   if (!item)
     return;
+
   Common::Symbol* symbol = g_symbolDB.GetSymbolFromAddr(item->data(Qt::UserRole).toUInt());
   if (!symbol)
     return;
   PowerPC::debug_interface.SetPatch(symbol->address, 0x4E800020);
-  item->setForeground(QBrush(Qt::red));
+
+  int row = item->row();
+  m_matching_results_table->item(row, 0)->setForeground(QBrush(Qt::red));
+  m_matching_results_table->item(row, 1)->setForeground(QBrush(Qt::red));
+  m_matching_results_table->item(row, 2)->setForeground(QBrush(Qt::red));
+  m_matching_results_table->item(row, 3)->setForeground(QBrush(Qt::red));
+  m_matching_results_table->item(row, 3)->setText(QStringLiteral("X"));
+
   m_code_widget->Update();
 }
 
 void CodeDiffDialog::UpdateItem()
 {
-  auto item = m_matching_results_list->currentItem();
-  auto address = item->data(Qt::UserRole).toUInt();
-  auto fullstring = item->text().toStdString();
-  auto symbolName = g_symbolDB.GetDescription(address);
-  int row = m_matching_results_list->row(item);
-  if (!row || row == -1)
+  QTableWidgetItem* item = m_matching_results_table->currentItem();
+  if (!item)
     return;
 
-  size_t pos = 0;
-  std::vector<std::string> v;
-  while ((pos = fullstring.find("\t")) != std::string::npos)
-  {
-    std::string token = fullstring.substr(0, pos);
-    v.push_back(token);
-    fullstring.erase(0, pos + 1);
-  }
-
-  QString fix_sym =
-      QString::fromStdString(symbolName).replace(QStringLiteral("\t"), QStringLiteral("  "));
-  QString updatedItem = QStringLiteral("%1\t%2\t%3")
-                            .arg(address, 1, 16)
-                            .arg(QString::fromStdString(v[1]))
-                            .arg(fix_sym);
-
-  m_matching_results_list->currentItem()->setText(updatedItem);
+  int row = m_matching_results_table->row(item);
+  if (row == -1)
+    return;
+  uint address = item->data(Qt::UserRole).toUInt();
+  QString newName = QString::fromStdString(g_symbolDB.GetDescription(address))
+                        .replace(QStringLiteral("\t"), QStringLiteral("  "));
+  m_matching_results_table->item(row, 2)->setText(newName);
 }

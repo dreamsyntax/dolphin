@@ -11,7 +11,7 @@
 class CodeWidget;
 class QCheckBox;
 class QLabel;
-class QListWidget;
+class QTableWidget;
 
 struct Diff
 {
@@ -53,7 +53,7 @@ private:
 
   void UpdateItem();
 
-  QListWidget* m_matching_results_list;
+  QTableWidget* m_matching_results_table;
   QLabel* m_exclude_size_label;
   QLabel* m_include_size_label;
   QPushButton* m_exclude_btn;
