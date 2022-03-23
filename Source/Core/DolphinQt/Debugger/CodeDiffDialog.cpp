@@ -292,12 +292,24 @@ void CodeDiffDialog::RemoveMissingSymbolsFromIncludes(const std::vector<Diff>& s
 {
   m_include.erase(std::remove_if(m_include.begin(), m_include.end(),
                                  [&](const Diff& v) {
-                                   return std::none_of(
+                                   auto arg = std::none_of(
                                        symbol_diff.begin(), symbol_diff.end(), [&](const Diff& p) {
                                          return p.symbol == v.symbol || p.addr == v.addr;
                                        });
+                                   return arg;
                                  }),
                   m_include.end());
+  for (auto& original_includes : m_include)
+  {
+    for (auto includes : symbol_diff)
+    {
+      if (original_includes.addr == includes.addr || original_includes.symbol == includes.symbol)
+      {
+        original_includes.hits += includes.hits;
+        break;
+      }
+    }
+  }
 }
 
 void CodeDiffDialog::RemoveMatchingSymbolsFromIncludes(const std::vector<Diff>& symbol_list)
@@ -410,7 +422,10 @@ void CodeDiffDialog::InfoDisp()
           "results.\nIncludes (Code has been executed) should "
           "have short recordings focusing on what you want.\n\nPressing 'Code has been "
           "executed' twice will only "
-          "keep functions that ran for both recordings.\n\nRight click -> 'Set blr' will place a "
+          "keep functions that ran for both recordings. Hits will update to reflect the total "
+          "number of "
+          "times a function has been executed until the lists are cleared with Reset.\n\nRight "
+          "click -> 'Set blr' will place a "
           "blr at the top of the symbol.\n"));
 }
 
