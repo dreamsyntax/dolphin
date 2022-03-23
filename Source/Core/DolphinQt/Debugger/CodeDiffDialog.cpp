@@ -124,6 +124,7 @@ void CodeDiffDialog::ClearData()
   m_matching_results_table->setRowCount(0);
   m_matching_results_table->setHorizontalHeaderLabels(
       {tr("Address"), tr("Hits"), tr("Symbol"), tr("Inspected")});
+  m_matching_results_table->setEditTriggers(QAbstractItemView::EditTrigger::NoEditTriggers);
   m_exclude_size_label->setText(QStringLiteral("Excluded: 0"));
   m_include_size_label->setText(QStringLiteral("Included: 0"));
   m_exclude_btn->setEnabled(false);
@@ -459,7 +460,10 @@ void CodeDiffDialog::OnDelete()
     return;
   // TODO: If/when sorting is ever added, .erase needs to find item position instead; leaving as is
   // for performance
-  m_include.erase(m_include.begin() + row);
+  if (!m_include.empty())
+  {
+    m_include.erase(m_include.begin() + row);
+  }
   m_matching_results_table->removeRow(row);
 }
 
@@ -494,7 +498,12 @@ void CodeDiffDialog::UpdateItem()
   if (row == -1)
     return;
   uint address = item->data(Qt::UserRole).toUInt();
-  QString newName = QString::fromStdString(g_symbolDB.GetDescription(address))
-                        .replace(QStringLiteral("\t"), QStringLiteral("  "));
+
+  auto symbolName = g_symbolDB.GetDescription(address);
+  if (symbolName == " --- ")
+    return;
+
+  QString newName =
+      QString::fromStdString(symbolName).replace(QStringLiteral("\t"), QStringLiteral("  "));
   m_matching_results_table->item(row, 2)->setText(newName);
 }
