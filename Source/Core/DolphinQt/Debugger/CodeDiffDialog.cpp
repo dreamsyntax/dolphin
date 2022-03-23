@@ -302,7 +302,8 @@ void CodeDiffDialog::RemoveMissingSymbolsFromIncludes(const std::vector<Diff>& s
   for (auto& original_includes : m_include)
   {
     auto pos = std::lower_bound(symbol_diff.begin(), symbol_diff.end(), original_includes.symbol);
-    if (pos->symbol == original_includes.symbol || pos->addr == original_includes.addr)
+    if (pos != symbol_diff.end() &&
+        (pos->symbol == original_includes.symbol || pos->addr == original_includes.addr))
       original_includes.hits += pos->hits;
   }
 }
