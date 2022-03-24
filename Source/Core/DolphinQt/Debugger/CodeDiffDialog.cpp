@@ -68,17 +68,18 @@ void CodeDiffDialog::CreateWidgets()
   btns_layout->addWidget(m_include_size_label, 1, 1);
 
   m_matching_results_table = new QTableWidget();
-  m_matching_results_table->setColumnCount(4);
+  m_matching_results_table->setColumnCount(5);
   m_matching_results_table->setHorizontalHeaderLabels(
-      {tr("Address"), tr("Hits"), tr("Symbol"), tr("Inspected")});
+      {tr("Address"), tr("Total Hits"), tr("Hits"), tr("Symbol"), tr("Inspected")});
   m_matching_results_table->setSelectionMode(QAbstractItemView::SingleSelection);
   m_matching_results_table->setSelectionBehavior(QAbstractItemView::SelectRows);
   m_matching_results_table->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   m_matching_results_table->setContextMenuPolicy(Qt::CustomContextMenu);
   m_matching_results_table->setColumnWidth(0, 60);
-  m_matching_results_table->setColumnWidth(1, 4);
-  m_matching_results_table->setColumnWidth(2, 210);
-  m_matching_results_table->setColumnWidth(3, 65);
+  m_matching_results_table->setColumnWidth(1, 60);
+  m_matching_results_table->setColumnWidth(2, 4);
+  m_matching_results_table->setColumnWidth(3, 210);
+  m_matching_results_table->setColumnWidth(4, 65);
   m_reset_btn = new QPushButton(tr("Reset All"));
   m_reset_btn->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   m_help_btn = new QPushButton(tr("Help"));
@@ -123,7 +124,7 @@ void CodeDiffDialog::ClearData()
   m_matching_results_table->clear();
   m_matching_results_table->setRowCount(0);
   m_matching_results_table->setHorizontalHeaderLabels(
-      {tr("Address"), tr("Hits"), tr("Symbol"), tr("Inspected")});
+      {tr("Address"), tr("Total Hits"), tr("Hits"), tr("Symbol"), tr("Inspected")});
   m_matching_results_table->setEditTriggers(QAbstractItemView::EditTrigger::NoEditTriggers);
   m_exclude_size_label->setText(QStringLiteral("Excluded: 0"));
   m_include_size_label->setText(QStringLiteral("Included: 0"));
@@ -279,6 +280,7 @@ std::vector<Diff> CodeDiffDialog::CalculateSymbolsFromProfile()
       tmp_diff.symbol = symbol;
       tmp_diff.addr = iter.addr;
       tmp_diff.hits = iter.run_count;
+      tmp_diff.total_hits = iter.run_count;
       current.push_back(tmp_diff);
     }
   }
@@ -305,7 +307,10 @@ void CodeDiffDialog::RemoveMissingSymbolsFromIncludes(const std::vector<Diff>& s
     auto pos = std::lower_bound(symbol_diff.begin(), symbol_diff.end(), original_includes.symbol);
     if (pos != symbol_diff.end() &&
         (pos->symbol == original_includes.symbol || pos->addr == original_includes.addr))
-      original_includes.hits += pos->hits;
+    {
+      original_includes.total_hits += pos->hits;
+      original_includes.hits = pos->hits;
+    }
   }
 }
 
@@ -349,7 +354,7 @@ void CodeDiffDialog::Update(bool include)
   m_matching_results_table->clear();
   m_matching_results_table->setRowCount(i);
   m_matching_results_table->setHorizontalHeaderLabels(
-      {tr("Address"), tr("Hits"), tr("Symbol"), tr("Inspected")});
+      {tr("Address"), tr("Total Hits"), tr("Hits"), tr("Symbol"), tr("Inspected")});
 
   for (auto& iter : m_include)
   {
@@ -360,11 +365,13 @@ void CodeDiffDialog::Update(bool include)
 
     m_matching_results_table->setItem(
         i, 0, create_item(QStringLiteral("%1").arg(iter.addr, 1, 16), iter.addr));
-    m_matching_results_table->setItem(i, 1,
-                                      create_item(QStringLiteral("%1").arg(iter.hits), iter.addr));
+    m_matching_results_table->setItem(
+        i, 1, create_item(QStringLiteral("%1").arg(iter.total_hits), iter.addr));
     m_matching_results_table->setItem(i, 2,
+                                      create_item(QStringLiteral("%1").arg(iter.hits), iter.addr));
+    m_matching_results_table->setItem(i, 3,
                                       create_item(QStringLiteral("%1").arg(fix_sym), iter.addr));
-    m_matching_results_table->setItem(i, 3, create_item(QStringLiteral(""), iter.addr));
+    m_matching_results_table->setItem(i, 4, create_item(QStringLiteral(""), iter.addr));
     i++;
   }
 
@@ -373,7 +380,7 @@ void CodeDiffDialog::Update(bool include)
   {
     m_matching_results_table->setRowCount(1);
     m_matching_results_table->setItem(
-        0, 2, create_item(QStringLiteral("No possible functions left. Reset.")));
+        0, 3, create_item(QStringLiteral("No possible functions left. Reset.")));
   }
 
   m_exclude_size_label->setText(QStringLiteral("Excluded: %1").arg(m_exclude.size()));
@@ -399,12 +406,11 @@ void CodeDiffDialog::InfoDisp()
           "recording without any change to the lists.\n'Code did not get executed': click while "
           "recording, will add recorded functions to an exclude "
           "list, then reset the recording list.\n'Code has been executed': click while recording, "
-          "will add "
-          "recorded function to an include list, then reset the recording list.\n\nAfter you use "
-          "both "
-          "exclude and include once, the exclude list will be subtracted from the include list "
-          "and "
-          "any includes left over will be displayed.\nYou can continue to use "
+          "will add recorded function to an include list, then reset the recording list.\n\nAfter "
+          "you use "
+          "both exclude and include once, the exclude list will be subtracted from the include "
+          "list "
+          "and any includes left over will be displayed.\nYou can continue to use "
           "'Code did not get executed'/'Code has been executed' to narrow down the "
           "results."));
   ModalMessageBox::information(
@@ -413,14 +419,13 @@ void CodeDiffDialog::InfoDisp()
           "Example:\n"
           "You want to find a function that runs when HP is modified.\n1. Start recording and "
           "play the game without letting HP be modified, then press 'Code did not get "
-          "executed'.\n2. "
-          "Immediately gain/lose HP and press 'Code has been executed'.\n3. Repeat 1 or 2 to "
-          "narrow down the "
-          "results.\nIncludes (Code has been executed) should "
+          "executed'.\n2. Immediately gain/lose HP and press 'Code has been executed'.\n3. Repeat "
+          "1 or 2 to "
+          "narrow down the results.\nIncludes (Code has been executed) should "
           "have short recordings focusing on what you want.\n\nPressing 'Code has been "
-          "executed' twice will only "
-          "keep functions that ran for both recordings. Hits will update to reflect the total "
-          "number of "
+          "executed' twice will only keep functions that ran for both recordings. Hits will update "
+          "to reflect the last recording's "
+          "number of Hits. Total Hits will reflect the total number of "
           "times a function has been executed until the lists are cleared with Reset.\n\nRight "
           "click -> 'Set blr' will place a "
           "blr at the top of the symbol.\n"));
@@ -483,7 +488,8 @@ void CodeDiffDialog::OnSetBLR()
   m_matching_results_table->item(row, 1)->setForeground(QBrush(Qt::red));
   m_matching_results_table->item(row, 2)->setForeground(QBrush(Qt::red));
   m_matching_results_table->item(row, 3)->setForeground(QBrush(Qt::red));
-  m_matching_results_table->item(row, 3)->setText(QStringLiteral("X"));
+  m_matching_results_table->item(row, 4)->setForeground(QBrush(Qt::red));
+  m_matching_results_table->item(row, 4)->setText(QStringLiteral("X"));
 
   m_code_widget->Update();
 }
@@ -505,5 +511,5 @@ void CodeDiffDialog::UpdateItem()
 
   QString newName =
       QString::fromStdString(symbolName).replace(QStringLiteral("\t"), QStringLiteral("  "));
-  m_matching_results_table->item(row, 2)->setText(newName);
+  m_matching_results_table->item(row, 3)->setText(newName);
 }

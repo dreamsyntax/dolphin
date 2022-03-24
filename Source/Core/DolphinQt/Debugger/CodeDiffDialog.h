@@ -18,6 +18,7 @@ struct Diff
   u32 addr;
   std::string symbol;
   u32 hits;
+  u32 total_hits;
 
   bool operator<(const std::string& val) const { return symbol < val; }
 };
