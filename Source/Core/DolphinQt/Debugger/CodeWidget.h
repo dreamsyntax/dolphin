@@ -66,7 +66,7 @@ private:
   void closeEvent(QCloseEvent*) override;
   void showEvent(QShowEvent* event) override;
 
-  CodeDiffDialog* diff_dialog = nullptr;
+  CodeDiffDialog* m_diff_dialog = nullptr;
   QLineEdit* m_search_address;
   QLineEdit* m_search_symbols;
   QPushButton* m_code_diff;

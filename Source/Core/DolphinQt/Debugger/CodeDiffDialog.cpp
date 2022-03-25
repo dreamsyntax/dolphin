@@ -3,14 +3,17 @@
 
 #include "DolphinQt/Debugger/CodeDiffDialog.h"
 
+#include <algorithm>
+#include <string>
+#include <vector>
+
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMenu>
 #include <QPushButton>
 #include <QTableWidget>
 #include <QVBoxLayout>
-#include <string>
-#include <vector>
+
 #include "Common/StringUtil.h"
 #include "Core/Core.h"
 #include "Core/Debugger/PPCDebugInterface.h"
@@ -20,6 +23,7 @@
 #include "Core/PowerPC/PPCSymbolDB.h"
 #include "Core/PowerPC/PowerPC.h"
 #include "Core/PowerPC/Profiler.h"
+
 #include "DolphinQt/Debugger/CodeWidget.h"
 #include "DolphinQt/Host.h"
 #include "DolphinQt/QtUtils/ModalMessageBox.h"
@@ -29,6 +33,8 @@ CodeDiffDialog::CodeDiffDialog(CodeWidget* parent) : QDialog(parent), m_code_wid
 {
   setWindowTitle(tr("Code Diff Tool"));
   CreateWidgets();
+  auto& settings = Settings::GetQSettings();
+  restoreGeometry(settings.value(QStringLiteral("diffdialog/geometry")).toByteArray());
   ConnectWidgets();
 }
 
@@ -42,8 +48,6 @@ void CodeDiffDialog::reject()
 
 void CodeDiffDialog::CreateWidgets()
 {
-  auto& settings = Settings::GetQSettings();
-  restoreGeometry(settings.value(QStringLiteral("diffdialog/geometry")).toByteArray());
   auto* btns_layout = new QGridLayout;
   m_exclude_btn = new QPushButton(tr("Code did not get executed"));
   m_include_btn = new QPushButton(tr("Code has been executed"));
@@ -95,6 +99,7 @@ void CodeDiffDialog::CreateWidgets()
   layout->addLayout(help_reset_layout);
 
   setLayout(layout);
+  resize(515, 400);
 }
 
 void CodeDiffDialog::ConnectWidgets()
@@ -126,8 +131,8 @@ void CodeDiffDialog::ClearData()
   m_matching_results_table->setHorizontalHeaderLabels(
       {tr("Address"), tr("Total Hits"), tr("Hits"), tr("Symbol"), tr("Inspected")});
   m_matching_results_table->setEditTriggers(QAbstractItemView::EditTrigger::NoEditTriggers);
-  m_exclude_size_label->setText(QStringLiteral("Excluded: 0"));
-  m_include_size_label->setText(QStringLiteral("Included: 0"));
+  m_exclude_size_label->setText(tr("Excluded: %1").arg(0));
+  m_include_size_label->setText(tr("Included: %1").arg(0));
   m_exclude_btn->setEnabled(false);
   m_include_btn->setEnabled(false);
   m_include_active = false;
@@ -161,7 +166,7 @@ void CodeDiffDialog::OnRecord(bool enabled)
   if (Core::GetState() == Core::State::Uninitialized)
   {
     ModalMessageBox::information(this, tr("Code Diff Tool"),
-                                 QStringLiteral("Emulation must be started to record."));
+                                 tr("Emulation must be started to record."));
     m_failed_requirements = true;
     m_record_btn->setChecked(false);
     return;
@@ -171,9 +176,9 @@ void CodeDiffDialog::OnRecord(bool enabled)
   {
     ModalMessageBox::warning(
         this, tr("Code Diff Tool"),
-        QStringLiteral("Symbol map not found.\n\nIf one does not exist, you can generate one from "
-                       "the Menu bar:\nSymbols -> Generate Symbols From ->\n\tAddress | Signature "
-                       "Database | RSO Modules"));
+        tr("Symbol map not found.\n\nIf one does not exist, you can generate one from "
+           "the Menu bar:\nSymbols -> Generate Symbols From ->\n\tAddress | Signature "
+           "Database | RSO Modules"));
     m_failed_requirements = true;
     m_record_btn->setChecked(false);
     return;
@@ -379,12 +384,11 @@ void CodeDiffDialog::Update(bool include)
   if (m_include_active && m_include.empty())
   {
     m_matching_results_table->setRowCount(1);
-    m_matching_results_table->setItem(
-        0, 3, create_item(QStringLiteral("No possible functions left. Reset.")));
+    m_matching_results_table->setItem(0, 3, create_item(tr("No possible functions left. Reset.")));
   }
 
-  m_exclude_size_label->setText(QStringLiteral("Excluded: %1").arg(m_exclude.size()));
-  m_include_size_label->setText(QStringLiteral("Included: %1").arg(m_include.size()));
+  m_exclude_size_label->setText(tr("Excluded: %1").arg(m_exclude.size()));
+  m_include_size_label->setText(tr("Included: %1").arg(m_include.size()));
 
   JitInterface::ClearCache();
   if (old_state == Core::State::Running)
@@ -395,40 +399,38 @@ void CodeDiffDialog::InfoDisp()
 {
   ModalMessageBox::information(
       this, tr("Code Diff Tool Help"),
-      QStringLiteral(
-          "Used to find functions based on when they should be running.\nSimilar to Cheat Engine "
-          "Ultimap.\n"
-          "A symbol map must be loaded prior to use.\n"
-          "Include/Exclude lists will persist on ending/restarting emulation.\nThese lists "
-          "will not persist on Dolphin close."
-          "\n\n'Start Recording': "
-          "keeps track of what functions run.\n'Stop Recording': erases current "
-          "recording without any change to the lists.\n'Code did not get executed': click while "
-          "recording, will add recorded functions to an exclude "
-          "list, then reset the recording list.\n'Code has been executed': click while recording, "
-          "will add recorded function to an include list, then reset the recording list.\n\nAfter "
-          "you use "
-          "both exclude and include once, the exclude list will be subtracted from the include "
-          "list "
-          "and any includes left over will be displayed.\nYou can continue to use "
-          "'Code did not get executed'/'Code has been executed' to narrow down the "
-          "results."));
+      tr("Used to find functions based on when they should be running.\nSimilar to Cheat Engine "
+         "Ultimap.\n"
+         "A symbol map must be loaded prior to use.\n"
+         "Include/Exclude lists will persist on ending/restarting emulation.\nThese lists "
+         "will not persist on Dolphin close."
+         "\n\n'Start Recording': "
+         "keeps track of what functions run.\n'Stop Recording': erases current "
+         "recording without any change to the lists.\n'Code did not get executed': click while "
+         "recording, will add recorded functions to an exclude "
+         "list, then reset the recording list.\n'Code has been executed': click while recording, "
+         "will add recorded function to an include list, then reset the recording list.\n\nAfter "
+         "you use "
+         "both exclude and include once, the exclude list will be subtracted from the include "
+         "list "
+         "and any includes left over will be displayed.\nYou can continue to use "
+         "'Code did not get executed'/'Code has been executed' to narrow down the "
+         "results."));
   ModalMessageBox::information(
       this, tr("Code Diff Tool Help"),
-      QStringLiteral(
-          "Example:\n"
-          "You want to find a function that runs when HP is modified.\n1. Start recording and "
-          "play the game without letting HP be modified, then press 'Code did not get "
-          "executed'.\n2. Immediately gain/lose HP and press 'Code has been executed'.\n3. Repeat "
-          "1 or 2 to "
-          "narrow down the results.\nIncludes (Code has been executed) should "
-          "have short recordings focusing on what you want.\n\nPressing 'Code has been "
-          "executed' twice will only keep functions that ran for both recordings. Hits will update "
-          "to reflect the last recording's "
-          "number of Hits. Total Hits will reflect the total number of "
-          "times a function has been executed until the lists are cleared with Reset.\n\nRight "
-          "click -> 'Set blr' will place a "
-          "blr at the top of the symbol.\n"));
+      tr("Example:\n"
+         "You want to find a function that runs when HP is modified.\n1. Start recording and "
+         "play the game without letting HP be modified, then press 'Code did not get "
+         "executed'.\n2. Immediately gain/lose HP and press 'Code has been executed'.\n3. Repeat "
+         "1 or 2 to "
+         "narrow down the results.\nIncludes (Code has been executed) should "
+         "have short recordings focusing on what you want.\n\nPressing 'Code has been "
+         "executed' twice will only keep functions that ran for both recordings. Hits will update "
+         "to reflect the last recording's "
+         "number of Hits. Total Hits will reflect the total number of "
+         "times a function has been executed until the lists are cleared with Reset.\n\nRight "
+         "click -> 'Set blr' will place a "
+         "blr at the top of the symbol.\n"));
 }
 
 void CodeDiffDialog::OnContextMenu()

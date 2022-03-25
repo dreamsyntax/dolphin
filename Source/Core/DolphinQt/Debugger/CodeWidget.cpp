@@ -182,12 +182,12 @@ void CodeWidget::ConnectWidgets()
 
 void CodeWidget::OnDiff()
 {
-  if (!diff_dialog)
-    diff_dialog = new CodeDiffDialog(this);
-  diff_dialog->setWindowFlag(Qt::WindowMinimizeButtonHint);
-  diff_dialog->show();
-  diff_dialog->raise();
-  diff_dialog->activateWindow();
+  if (!m_diff_dialog)
+    m_diff_dialog = new CodeDiffDialog(this);
+  m_diff_dialog->setWindowFlag(Qt::WindowMinimizeButtonHint);
+  m_diff_dialog->show();
+  m_diff_dialog->raise();
+  m_diff_dialog->activateWindow();
 }
 
 void CodeWidget::OnSearchAddress()
