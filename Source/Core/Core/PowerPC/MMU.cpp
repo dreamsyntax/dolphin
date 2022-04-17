@@ -1151,7 +1151,7 @@ static void GenerateDSIException(u32 effective_address, bool write)
   {
     PanicAlertFmt("Invalid {} {:#010x}, PC = {:#010x}", write ? "write to" : "read from",
                   effective_address, PC);
-    if (SConfig::GetInstance().bPauseOnPanicHandler)
+    if (SConfig::GetInstance().bPauseOnPanicHandler && Common::GetEnableAlert())
     {
       CPU::Break();
       ppcState.Exceptions |= EXCEPTION_DSI | EXCEPTION_FAKE_MEMCHECK_HIT;

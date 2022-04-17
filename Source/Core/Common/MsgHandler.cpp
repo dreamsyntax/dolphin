@@ -90,6 +90,12 @@ void RegisterStringTranslator(StringTranslator translator)
   s_str_translator = translator;
 }
 
+// Get the status of the alert handler
+bool GetEnableAlert()
+{
+  return s_alert_enabled;
+}
+
 // enable/disable the alert handler
 void SetEnableAlert(bool enable)
 {

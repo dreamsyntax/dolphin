@@ -48,6 +48,7 @@ bool MsgAlertFmt(bool yes_no, MsgType style, const S& format, const Args&... arg
   return MsgAlertFmtImpl(yes_no, style, format, fmt::make_args_checked<Args...>(format, args...));
 }
 
+bool GetEnableAlert();
 void SetEnableAlert(bool enable);
 void SetAbortOnPanicAlert(bool should_abort);
 
