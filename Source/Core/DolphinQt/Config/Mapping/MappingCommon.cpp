@@ -19,11 +19,11 @@
 
 namespace MappingCommon
 {
-constexpr auto INPUT_DETECT_INITIAL_TIME = std::chrono::seconds(3);
+constexpr auto INPUT_DETECT_INITIAL_TIME = std::chrono::seconds(1);
 constexpr auto INPUT_DETECT_CONFIRMATION_TIME = std::chrono::milliseconds(0);
-constexpr auto INPUT_DETECT_MAXIMUM_TIME = std::chrono::seconds(5);
+constexpr auto INPUT_DETECT_MAXIMUM_TIME = std::chrono::seconds(1);
 
-constexpr auto OUTPUT_TEST_TIME = std::chrono::seconds(2);
+constexpr auto OUTPUT_TEST_TIME = std::chrono::seconds(0);
 
 QString DetectExpression(QPushButton* button, ciface::Core::DeviceContainer& device_container,
                          const std::vector<std::string>& device_strings,
