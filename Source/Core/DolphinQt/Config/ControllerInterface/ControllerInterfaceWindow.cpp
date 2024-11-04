@@ -30,6 +30,8 @@ void ControllerInterfaceWindow::CreateMainLayout()
   m_dsuclient_widget = new DualShockUDPClientWidget();
   m_tab_widget->addTab(m_dsuclient_widget, tr("DSU Client"));  // TODO: use GetWrappedWidget()?
 #endif
+  m_tab_widget->addTab(new QCheckBox(tr("Enable DualSense Player LED")), tr("Misc"));
+  m_common_sdl_ps5_player_led = ;
 
   auto* main_layout = new QVBoxLayout();
   if (m_tab_widget->count() > 0)
