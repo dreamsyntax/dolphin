@@ -296,7 +296,6 @@ private:
   Uint32 m_stop_event_type;
   Uint32 m_populate_event_type;
   std::thread m_hotplug_thread;
-  Config::ConfigChangedCallbackID m_config_changed_callback_id;
 };
 
 std::unique_ptr<ciface::InputBackend> CreateInputBackend(ControllerInterface* controller_interface)
@@ -438,11 +437,13 @@ InputBackend::InputBackend(ControllerInterface* controller_interface)
   // We want buttons to come in as positions, not labels
   SDL_SetHint(SDL_HINT_GAMECONTROLLER_USE_BUTTON_LABELS, "0");
 
-  m_config_changed_callback_id = Config::AddConfigChangedCallback([this] { SetPS5PlayerLED(); });
+  const Config::ConfigChangedCallbackID config_changed_callback_id =
+      Config::AddConfigChangedCallback([this] { SetPS5PlayerLED(); });
   SetPS5PlayerLED();
 
-  m_hotplug_thread = std::thread([this] {
-    Common::ScopeGuard quit_guard([] {
+  m_hotplug_thread = std::thread([this, config_changed_callback_id] {
+    Common::ScopeGuard quit_guard([config_changed_callback_id] {
+      Config::RemoveConfigChangedCallback(config_changed_callback_id);
       // TODO: there seems to be some sort of memory leak with SDL, quit isn't freeing everything up
       SDL_Quit();
     });
@@ -516,7 +517,6 @@ InputBackend::~InputBackend()
   if (!m_hotplug_thread.joinable())
     return;
 
-  Config::RemoveConfigChangedCallback(m_config_changed_callback_id);
   SDL_Event stop_event{m_stop_event_type};
   SDL_PushEvent(&stop_event);
 
