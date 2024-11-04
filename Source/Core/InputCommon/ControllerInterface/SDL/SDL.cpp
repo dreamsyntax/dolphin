@@ -14,6 +14,7 @@
 #include "Common/Logging/Log.h"
 #include "Common/MathUtil.h"
 #include "Common/ScopeGuard.h"
+#include "Core/Config/MainSettings.h"
 #include "InputCommon/ControllerInterface/ControllerInterface.h"
 
 #ifdef _WIN32
@@ -287,6 +288,7 @@ public:
 
 private:
   void OpenAndAddDevice(int index);
+  void SetPS5PlayerLED();
 
   bool HandleEventAndContinue(const SDL_Event& e);
 
@@ -294,6 +296,7 @@ private:
   Uint32 m_stop_event_type;
   Uint32 m_populate_event_type;
   std::thread m_hotplug_thread;
+  Config::ConfigChangedCallbackID m_config_changed_callback_id;
 };
 
 std::unique_ptr<ciface::InputBackend> CreateInputBackend(ControllerInterface* controller_interface)
@@ -435,8 +438,8 @@ InputBackend::InputBackend(ControllerInterface* controller_interface)
   // We want buttons to come in as positions, not labels
   SDL_SetHint(SDL_HINT_GAMECONTROLLER_USE_BUTTON_LABELS, "0");
 
-  // Disable DualSense Player LEDs; We already colorize the Primary LED
-  SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5_PLAYER_LED, "0");
+  m_config_changed_callback_id = Config::AddConfigChangedCallback([this] { SetPS5PlayerLED(); });
+  SetPS5PlayerLED();
 
   m_hotplug_thread = std::thread([this] {
     Common::ScopeGuard quit_guard([] {
@@ -513,6 +516,7 @@ InputBackend::~InputBackend()
   if (!m_hotplug_thread.joinable())
     return;
 
+  Config::RemoveConfigChangedCallback(m_config_changed_callback_id);
   SDL_Event stop_event{m_stop_event_type};
   SDL_PushEvent(&stop_event);
 
@@ -526,6 +530,12 @@ void InputBackend::PopulateDevices()
 
   SDL_Event populate_event{m_populate_event_type};
   SDL_PushEvent(&populate_event);
+}
+
+void InputBackend::SetPS5PlayerLED()
+{
+  SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5_PLAYER_LED,
+              Config::Get(Config::MAIN_INPUT_SDL_PS5_PLAYER_LED) ? "1" : "0");
 }
 
 struct SDLMotionAxis
