@@ -212,7 +212,6 @@ void SConfig::OnNewTitleLoad(const Core::CPUThreadGuard& guard)
   CBoot::LoadMapFromFilename(guard, ppc_symbol_db);
   HLE::Reload(system);
   PatchEngine::Reload(system);
-  HiresTexture::Update();
   WC24PatchEngine::Reload();
 }
 
