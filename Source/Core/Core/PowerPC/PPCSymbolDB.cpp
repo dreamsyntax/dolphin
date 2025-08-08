@@ -622,13 +622,13 @@ bool PPCSymbolDB::LoadMap(const Core::CPUThreadGuard& guard, std::string filenam
 
   Index(&new_functions);
   DetermineNoteLayers(&new_notes);
-  FillInCallers();
 
   std::lock_guard lock(m_mutex);
   std::swap(m_functions, new_functions);
   std::swap(m_notes, new_notes);
   std::swap(m_checksum_to_function, checksum_to_function);
   std::swap(m_map_name, filename);
+  FillInCallers();
 
   NOTICE_LOG_FMT(SYMBOLS, "{} symbols loaded, {} symbols ignored.", good_count, bad_count);
   return true;
